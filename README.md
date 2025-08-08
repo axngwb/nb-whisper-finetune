@@ -1,4 +1,4 @@
-# 🎯 NB-Whisper Finetuning Starter Kit
+# NB-Whisper Finetuning Starter Kit
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
@@ -9,38 +9,38 @@
 
 A comprehensive, Windows-friendly pipeline for fine-tuning Norwegian Whisper models with minimal setup and maximum reproducibility.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [✨ Features](#-features)
-- [🎯 Target Audience](#-target-audience)
-- [📊 Project Comparison](#-project-comparison)
-- [⚙️ System Requirements](#️-system-requirements)
-- [🚀 Quick Start](#-quick-start)
-- [📖 Detailed Usage](#-detailed-usage)
-- [📁 Project Structure](#-project-structure)
-- [🔧 Troubleshooting](#-troubleshooting)
-- [📄 License](#-license)
+- [Features](#features)
+- [Target Audience](#target-audience)
+- [Project Comparison](#project-comparison)
+- [System Requirements](#system-requirements)
+- [Quick Start](#quick-start)
+- [Detailed Usage](#detailed-usage)
+- [Project Structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| 🔄 **End-to-End Pipeline** | Complete workflow: dataset preparation → fine-tuning → evaluation → inference |
-| 🔍 **Model Analysis** | Comprehensive model inspection and step-wise token generation tracing |
-| 💻 **Windows Native** | PowerShell commands ready out of the box |
-| 📊 **TensorBoard Integration** | Real-time training monitoring with detailed logs |
-| 🎯 **Minimal Dependencies** | Clean, focused implementation without bloat |
-| ⚡ **GPU & CPU Support** | Flexible deployment options for different hardware |
+| **End-to-End Pipeline** | Complete workflow: dataset preparation → fine-tuning → evaluation → inference |
+| **Model Analysis** | Comprehensive model inspection and step-wise token generation tracing |
+| **Windows Native** | PowerShell commands ready out of the box |
+| **TensorBoard Integration** | Real-time training monitoring with detailed logs |
+| **Minimal Dependencies** | Clean, focused implementation without bloat |
+| **GPU & CPU Support** | Flexible deployment options for different hardware |
 
 **Base Model**: [`NbAiLab/nb-whisper-large`](https://huggingface.co/NbAiLab/nb-whisper-large) (Apache-2.0)
 
-## 🎯 Target Audience
+## Target Audience
 
-- **🔧 Windows Developers** seeking quick NB-Whisper fine-tuning on custom data
-- **👨‍💼 ML Practitioners** needing minimal, reproducible pipelines without heavy infrastructure
-- **🎓 Researchers** wanting practical PyTorch implementation over complex research setups
+- **Windows Developers** seeking quick NB-Whisper fine-tuning on custom data
+- **ML Practitioners** needing minimal, reproducible pipelines without heavy infrastructure
+- **Researchers** wanting practical PyTorch implementation over complex research setups
 
-## 📊 Project Comparison
+## Project Comparison
 
 | Aspect | Official nb-whisper | This Starter Kit |
 |--------|-------------------|------------------|
@@ -49,9 +49,9 @@ A comprehensive, Windows-friendly pipeline for fine-tuning Norwegian Whisper mod
 | **Platform** | Multi-platform research | Windows-optimized development |
 | **Use Case** | Experiments & research | Production-ready fine-tuning |
 
-📚 **Official Repository**: [NbAiLab/nb-whisper](https://github.com/NbAiLab/nb-whisper)
+**Official Repository**: [NbAiLab/nb-whisper](https://github.com/NbAiLab/nb-whisper)
 
-## ⚙️ System Requirements
+## System Requirements
 
 | Component | Requirement | Notes |
 |-----------|-------------|-------|
@@ -60,12 +60,12 @@ A comprehensive, Windows-friendly pipeline for fine-tuning Norwegian Whisper mod
 | **Hardware** | CPU (smoke tests) / GPU (CUDA 12.4) | GPU recommended for production |
 | **Memory** | 8GB+ RAM | 16GB+ recommended for GPU training |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Step 1: Environment Setup
 
 <details>
-<summary>🔧 <strong>Initial Setup</strong></summary>
+<summary><strong>Initial Setup</strong></summary>
 
 ```powershell
 # Create virtual environment
@@ -78,10 +78,10 @@ py -3 -m venv .venv
 **Choose PyTorch variant:**
 
 ```powershell
-# 💻 CPU Version (for testing)
+# CPU Version (for testing)
 ./.venv/Scripts/pip install --index-url https://download.pytorch.org/whl/cpu torch torchaudio
 
-# 🚀 GPU Version (recommended for training)
+# GPU Version (recommended for training)
 ./.venv/Scripts/pip install --index-url https://download.pytorch.org/whl/cu124 torch torchaudio
 ```
 </details>
@@ -108,12 +108,12 @@ py -3 -m venv .venv
   --out_json_val data/val.json
 ```
 
-> 📝 **Important**: Edit `data/train.csv` to ensure transcript accuracy. Format: `audio,text`. Prefer clips ≤ 30s.
+> **Important**: Edit `data/train.csv` to ensure transcript accuracy. Format: `audio,text`. Prefer clips ≤ 30s.
 
 ### Step 4: Training
 
 <details>
-<summary>🧪 <strong>Quick Demo Run (CPU)</strong></summary>
+<summary><strong>Quick Demo Run (CPU)</strong></summary>
 
 ```powershell
 ./.venv/Scripts/python train/finetune.py \
@@ -127,7 +127,7 @@ py -3 -m venv .venv
 </details>
 
 <details>
-<summary>🚀 <strong>Production Training (GPU)</strong></summary>
+<summary><strong>Production Training (GPU)</strong></summary>
 
 ```powershell
 ./.venv/Scripts/python train/finetune.py \
@@ -142,12 +142,12 @@ py -3 -m venv .venv
 ```
 </details>
 
-**📂 Outputs**: Model saved to `outputs/whisper-finetuned/`, logs in `runs/`
+**Outputs**: Model saved to `outputs/whisper-finetuned/`, logs in `runs/`
 
 ### Step 5: Monitoring & Evaluation
 
 <details>
-<summary>📊 <strong>TensorBoard Setup</strong></summary>
+<summary><strong>TensorBoard Setup</strong></summary>
 
 ```powershell
 # Install and launch TensorBoard
@@ -158,7 +158,7 @@ Open: [http://127.0.0.1:6006](http://127.0.0.1:6006)
 </details>
 
 <details>
-<summary>📈 <strong>Model Evaluation</strong></summary>
+<summary><strong>Model Evaluation</strong></summary>
 
 ```powershell
 # Compare base vs fine-tuned models
@@ -170,9 +170,9 @@ Open: [http://127.0.0.1:6006](http://127.0.0.1:6006)
 ```
 </details>
 
-## 📖 Detailed Usage
+## Detailed Usage
 
-### 🔍 Model Analysis Tools
+### Model Analysis Tools
 
 <details>
 <summary><strong>Model Inspection</strong></summary>
@@ -192,7 +192,7 @@ Open: [http://127.0.0.1:6006](http://127.0.0.1:6006)
 ```
 </details>
 
-### ⚠️ Current Limitations
+### Current Limitations
 
 | Limitation | Description | Workaround |
 |------------|-------------|------------|
@@ -201,30 +201,30 @@ Open: [http://127.0.0.1:6006](http://127.0.0.1:6006)
 | **Performance** | Auto-transcription slow on CPU | Use GPU or prepare transcripts manually |
 | **Data Augmentation** | Basic augmentations only | Extend `finetune.py` for advanced techniques |
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 nb-whisper-finetune/
-├── 📁 scripts/                   # Core functionality
-│   ├── 🔍 asr_infer.py           # Base model inference
-│   ├── 🎯 asr_infer_finetuned.py # Fine-tuned model inference  
-│   ├── 📊 prepare_dataset.py     # Dataset preparation & auto-transcription
-│   ├── 🔍 inspect_model.py       # Model structure analysis
-│   ├── 📈 trace_generate.py      # Token generation tracing
-│   └── 📊 eval_wer.py            # WER evaluation
-├── 📁 train/
-│   └── 🚀 finetune.py            # Full-model fine-tuning pipeline
-├── 📁 data/                      # Your datasets (gitignored)
-├── 📁 outputs/                   # Fine-tuned models (gitignored)  
-├── 📁 runs/                      # TensorBoard logs (gitignored)
-├── 📄 requirements.txt           # Python dependencies
-└── 📖 README.md                  # This guide
+├── scripts/                      # Core functionality
+│   ├── asr_infer.py              # Base model inference
+│   ├── asr_infer_finetuned.py    # Fine-tuned model inference  
+│   ├── prepare_dataset.py        # Dataset preparation & auto-transcription
+│   ├── inspect_model.py          # Model structure analysis
+│   ├── trace_generate.py         # Token generation tracing
+│   └── eval_wer.py               # WER evaluation
+├── train/
+│   └── finetune.py               # Full-model fine-tuning pipeline
+├── data/                         # Your datasets (gitignored)
+├── outputs/                      # Fine-tuned models (gitignored)  
+├── runs/                         # TensorBoard logs (gitignored)
+├── requirements.txt              # Python dependencies
+└── README.md                     # This guide
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 <details>
-<summary>💻 <strong>Command Line Issues</strong></summary>
+<summary><strong>Command Line Issues</strong></summary>
 
 | Issue | Solution |
 |-------|----------|
@@ -235,7 +235,7 @@ nb-whisper-finetune/
 </details>
 
 <details>
-<summary>🎵 <strong>Audio & Data Issues</strong></summary>
+<summary><strong>Audio & Data Issues</strong></summary>
 
 | Issue | Solution |
 |-------|----------|
@@ -246,7 +246,7 @@ nb-whisper-finetune/
 </details>
 
 <details>
-<summary>⚡ <strong>Performance Issues</strong></summary>
+<summary><strong>Performance Issues</strong></summary>
 
 | Issue | Solution |
 |-------|----------|
@@ -257,7 +257,7 @@ nb-whisper-finetune/
 </details>
 
 <details>
-<summary>🛠️ <strong>System Issues</strong></summary>
+<summary><strong>System Issues</strong></summary>
 
 | Issue | Solution |
 |-------|----------|
@@ -267,7 +267,7 @@ nb-whisper-finetune/
 
 </details>
 
-## 📄 License
+## License
 
 ### Code License
 This project is licensed under **Apache-2.0** - see [LICENSE](LICENSE) file for details.

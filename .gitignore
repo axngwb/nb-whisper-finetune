@@ -1,0 +1,22 @@
+# Python/venv
+.venv/
+__pycache__/
+
+# VSCode/Cursor
+.vscode/
+.cursor/
+
+# HF cache artifacts
+**/.cache/
+
+# Outputs
+outputs/
+runs/
+
+# Analysis artifacts
+analysis_*.txt
+
+# OS
+.DS_Store
+Thumbs.db
+

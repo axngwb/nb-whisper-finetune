@@ -5,7 +5,7 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red.svg)](https://pytorch.org/)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue.svg)](https://www.microsoft.com/windows)
 
-> **Professional toolkit to adapt NbAiLab/nb-whisper-large to your own Norwegian data**
+> **Toolkit to adapt NbAiLab/nb-whisper-large to your own Norwegian data**
 
 A comprehensive, Windows-friendly pipeline for fine-tuning Norwegian Whisper models with minimal setup and maximum reproducibility.
 
@@ -205,20 +205,20 @@ Open: [http://127.0.0.1:6006](http://127.0.0.1:6006)
 
 ```
 nb-whisper-finetune/
-├── 📁 scripts/              # Core functionality
+├── 📁 scripts/                   # Core functionality
 │   ├── 🔍 asr_infer.py           # Base model inference
 │   ├── 🎯 asr_infer_finetuned.py # Fine-tuned model inference  
 │   ├── 📊 prepare_dataset.py     # Dataset preparation & auto-transcription
 │   ├── 🔍 inspect_model.py       # Model structure analysis
 │   ├── 📈 trace_generate.py      # Token generation tracing
-│   └── 📊 eval_wer.py           # WER evaluation
+│   └── 📊 eval_wer.py            # WER evaluation
 ├── 📁 train/
 │   └── 🚀 finetune.py            # Full-model fine-tuning pipeline
-├── 📁 data/                 # Your datasets (gitignored)
-├── 📁 outputs/              # Fine-tuned models (gitignored)  
-├── 📁 runs/                 # TensorBoard logs (gitignored)
-├── 📄 requirements.txt      # Python dependencies
-└── 📖 README.md            # This guide
+├── 📁 data/                      # Your datasets (gitignored)
+├── 📁 outputs/                   # Fine-tuned models (gitignored)  
+├── 📁 runs/                      # TensorBoard logs (gitignored)
+├── 📄 requirements.txt           # Python dependencies
+└── 📖 README.md                  # This guide
 ```
 
 ## 🔧 Troubleshooting

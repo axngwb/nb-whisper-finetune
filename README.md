@@ -278,13 +278,3 @@ This project is licensed under **Apache-2.0** - see [LICENSE](LICENSE) file for 
 ### Attribution
 - **Maintainer**: [axngwb](https://github.com/axngwb)
 - **Base Model**: Norwegian AI Lab (NbAiLab)
-
----
-
-<div align="center">
-
-**🚀 Ready to fine-tune your Norwegian Whisper model?**
-
-[🔧 Setup Environment](#step-1-environment-setup) • [📊 Prepare Data](#step-3-dataset-preparation) • [🚀 Start Training](#step-4-training)
-
-</div>

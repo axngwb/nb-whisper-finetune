@@ -1,0 +1,11 @@
+transformers>=4.35.2
+datasets>=2.16.0
+accelerate>=0.24.0
+evaluate>=0.4.1
+jiwer>=3.0.3
+soundfile>=0.12.1
+safetensors>=0.4.2
+huggingface_hub>=0.22.0
+jupyterlab>=4.0.0
+tensorboard>=2.14.0
+

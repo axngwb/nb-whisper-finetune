@@ -214,7 +214,7 @@ nb-whisper-finetune/
 │   └── eval_wer.py               # WER evaluation
 ├── train/
 │   └── finetune.py               # Full-model fine-tuning pipeline
-├── data/                         # Your datasets (gitignored)
+├── data/                         # Your datasets
 ├── outputs/                      # Fine-tuned models (gitignored)  
 ├── runs/                         # TensorBoard logs (gitignored)
 ├── requirements.txt              # Python dependencies

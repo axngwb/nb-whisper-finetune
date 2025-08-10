@@ -1,5 +1,6 @@
 import argparse
 import json
+import random
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional
 import evaluate
@@ -14,6 +15,17 @@ from transformers import (
     Seq2SeqTrainer,
 )
 from transformers import __version__ as transformers_version
+try:
+    import mlflow
+except Exception:
+    mlflow = None
+try:
+    from peft import LoraConfig, TaskType, get_peft_model, PeftModel
+except Exception:
+    LoraConfig = None
+    TaskType = None
+    get_peft_model = None
+    PeftModel = None
 
 
 @dataclass
@@ -42,6 +54,14 @@ class Args:
     aug_speed_max: float
     aug_noise_snr_min: float
     aug_noise_snr_max: float
+    use_lora: bool
+    lora_r: int
+    lora_alpha: int
+    lora_dropout: float
+    lora_targets: Optional[str]
+    save_merged: bool
+    mlflow_tracking_uri: Optional[str]
+    mlflow_experiment: Optional[str]
 
 
 def parse_args() -> Args:
@@ -70,6 +90,19 @@ def parse_args() -> Args:
     p.add_argument("--aug_speed_max", type=float, default=1.1)
     p.add_argument("--aug_noise_snr_min", type=float, default=15.0)
     p.add_argument("--aug_noise_snr_max", type=float, default=25.0)
+    p.add_argument("--use_lora", action="store_true")
+    p.add_argument("--lora_r", type=int, default=16)
+    p.add_argument("--lora_alpha", type=int, default=32)
+    p.add_argument("--lora_dropout", type=float, default=0.05)
+    p.add_argument(
+        "--lora_targets",
+        type=str,
+        default="q_proj,k_proj,v_proj,out_proj,fc1,fc2,encoder_attn",
+        help="Comma-separated module names for LoRA",
+    )
+    p.add_argument("--save_merged", action="store_true", help="Merge LoRA into base weights on save")
+    p.add_argument("--mlflow_tracking_uri", type=str, default=None)
+    p.add_argument("--mlflow_experiment", type=str, default=None)
     a = p.parse_args()
     return Args(**vars(a))
 
@@ -124,9 +157,31 @@ def build_model_and_processor(model_id: str):
     return model, processor
 
 
+def _apply_lora_if_requested(model: WhisperForConditionalGeneration, args: Args) -> WhisperForConditionalGeneration:
+    if not args.use_lora:
+        return model
+    if get_peft_model is None or LoraConfig is None:
+        raise RuntimeError("peft is required for --use_lora but is not installed")
+    target_modules = [s.strip() for s in str(args.lora_targets).split(",") if s.strip()]
+    config = LoraConfig(
+        task_type=TaskType.SEQ_2_SEQ_LM,
+        r=args.lora_r,
+        lora_alpha=args.lora_alpha,
+        lora_dropout=args.lora_dropout,
+        target_modules=target_modules,
+        bias="none",
+    )
+    model = get_peft_model(model, config)
+    return model
+
+
 def main():
     args = parse_args()
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
     model, processor = build_model_and_processor(args.model_id)
+    model = _apply_lora_if_requested(model, args)
 
     if args.dataset.endswith(".json") or args.dataset.endswith(".csv"):
         ds_train = load_dataset("json" if args.dataset.endswith(".json") else "csv", data_files=args.dataset)["train"]
@@ -230,6 +285,16 @@ def main():
         data_collator=data_collator,
         compute_metrics=compute_metrics if eval_ds is not None else None,
     )
+    if args.mlflow_tracking_uri is not None and mlflow is None:
+        raise RuntimeError("mlflow must be installed to use --mlflow_tracking_uri")
+
+    mlflow_run = None
+    if args.mlflow_tracking_uri is not None and mlflow is not None:
+        mlflow.set_tracking_uri(args.mlflow_tracking_uri)
+        if args.mlflow_experiment:
+            mlflow.set_experiment(args.mlflow_experiment)
+        mlflow_run = mlflow.start_run(run_name="finetune")
+        mlflow.log_params({k: v for k, v in asdict(args).items() if k != "resume_from_checkpoint"})
 
     if args.max_steps == 0:
         pass
@@ -238,12 +303,24 @@ def main():
             trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
         else:
             trainer.train()
-    trainer.save_model()
+    if args.use_lora and args.save_merged and PeftModel is not None and isinstance(model, PeftModel):
+        merged = model.merge_and_unload()
+        merged.save_pretrained(args.output_dir)
+    else:
+        trainer.save_model()
     processor.save_pretrained(args.output_dir)
     model.generation_config.save_pretrained(args.output_dir)
     meta = {"args": asdict(args), "transformers_version": transformers_version, "torch_version": torch.__version__}
     with open(f"{args.output_dir}/training_metadata.json", "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
+    if mlflow_run is not None and mlflow is not None:
+        if eval_ds is not None:
+            metrics = trainer.evaluate()
+            for k, v in metrics.items():
+                if isinstance(v, (int, float)):
+                    mlflow.log_metric(k, float(v))
+        mlflow.log_artifact(local_path=f"{args.output_dir}/training_metadata.json")
+        mlflow.end_run()
 
 
 if __name__ == "__main__":

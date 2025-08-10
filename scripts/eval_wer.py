@@ -3,9 +3,13 @@ import csv
 from pathlib import Path
 from typing import List
 import numpy as np
-from transformers import pipeline
+from transformers import pipeline, WhisperForConditionalGeneration, WhisperProcessor
 import torchaudio
 import evaluate
+try:
+    from peft import PeftModel
+except Exception:
+    PeftModel = None
 
 
 def load_audio(path: str, target_sr: int = 16000):
@@ -32,18 +36,38 @@ def main():
     ap.add_argument("--model_path", default="outputs/whisper-finetuned")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--num_beams", type=int, default=5)
+    ap.add_argument("--adapter_path", type=str, default=None)
     args = ap.parse_args()
 
     data = read_csv(Path(args.csv))
 
-    asr = pipeline(
-        task="automatic-speech-recognition",
-        model=args.model_path,
-        device=args.device,
-        chunk_length_s=28,
-        return_timestamps=False,
-        generate_kwargs={"task": "transcribe", "language": "no", "num_beams": args.num_beams},
-    )
+    if args.adapter_path is None:
+        asr = pipeline(
+            task="automatic-speech-recognition",
+            model=args.model_path,
+            device=args.device,
+            chunk_length_s=28,
+            return_timestamps=False,
+            generate_kwargs={"task": "transcribe", "language": "no", "num_beams": args.num_beams},
+        )
+    else:
+        if PeftModel is None:
+            raise RuntimeError("peft is required to use --adapter_path")
+        processor = WhisperProcessor.from_pretrained(args.model_path)
+        base = WhisperForConditionalGeneration.from_pretrained(args.model_path)
+        model = PeftModel.from_pretrained(base, args.adapter_path)
+        model.generation_config.language = "no"
+        model.generation_config.task = "transcribe"
+        asr = pipeline(
+            task="automatic-speech-recognition",
+            model=model,
+            tokenizer=processor.tokenizer,
+            feature_extractor=processor.feature_extractor,
+            device=args.device,
+            chunk_length_s=28,
+            return_timestamps=False,
+            generate_kwargs={"task": "transcribe", "language": "no", "num_beams": args.num_beams},
+        )
 
     preds: List[str] = []
     refs: List[str] = []

@@ -26,11 +26,18 @@ A comprehensive, Windows-friendly pipeline for fine-tuning Norwegian Whisper mod
 | Feature | Description |
 |---------|-------------|
 | **End-to-End Pipeline** | Complete workflow: dataset preparation → fine-tuning → evaluation → inference |
-| **Model Analysis** | Comprehensive model inspection and step-wise token generation tracing |
+| **Model Anal ysis** | Comprehensive model inspection and step-wise token generation tracing |
 | **Windows Native** | PowerShell commands ready out of the box |
 | **TensorBoard Integration** | Real-time training monitoring with detailed logs |
 | **Minimal Dependencies** | Clean, focused implementation without bloat |
 | **GPU & CPU Support** | Flexible deployment options for different hardware |
+| **LoRA (PEFT)** | Parameter-efficient fine-tuning and adapter merge utility |
+| **VAD Segmentation** | Energy-based segmentation for long audio clips |
+| **Interactive Demo** | Gradio app for quick local testing |
+| **Export** | ONNX export script for deployment |
+| **Benchmark** | Latency and RTF measurement script |
+| **Experiment Tracking** | Optional MLflow logging of params/metrics/artifacts |
+| **Docker** | Ready-to-build CPU/GPU images for quick demo runs |
 
 **Base Model**: [`NbAiLab/nb-whisper-large`](https://huggingface.co/NbAiLab/nb-whisper-large) (Apache-2.0)
 
@@ -105,7 +112,8 @@ py -3 -m venv .venv
   --num_beams 5 \
   --val_fraction 0.1 \
   --out_csv_val data/val.csv \
-  --out_json_val data/val.json
+  --out_json_val data/val.json \
+  --use_vad --segment_max_seconds 28.0 --silence_threshold 1.5
 ```
 
 > **Important**: Edit `data/train.csv` to ensure transcript accuracy. Format: `audio,text`. Prefer clips ≤ 30s.
@@ -142,35 +150,167 @@ py -3 -m venv .venv
 ```
 </details>
 
-**Outputs**: Model saved to `outputs/whisper-finetuned/`, logs in `runs/`
-
-### Step 5: Monitoring & Evaluation
-
 <details>
-<summary><strong>TensorBoard Setup</strong></summary>
+<summary><strong>Parameter-Efficient Fine-tuning (LoRA)</strong></summary>
 
 ```powershell
-# Install and launch TensorBoard
-./.venv/Scripts/python -m pip install tensorboard
+# Train LoRA adapter
+./.venv/Scripts/python train/finetune.py \
+  --model_id NbAiLab/nb-whisper-large \
+  --dataset data/train.csv \
+  --dataset_eval data/val.csv \
+  --num_train_epochs 1 \
+  --per_device_train_batch_size 4 \
+  --gradient_accumulation_steps 4 \
+  --fp16 \
+  --use_lora --lora_r 16 --lora_alpha 32 --lora_dropout 0.05 \
+  --output_dir outputs/whisper-lora-r16
+
+# Option A: Merge adapter for deployment
+./.venv/Scripts/python scripts/merge_lora.py --base_model NbAiLab/nb-whisper-large \
+  --adapter_path outputs/whisper-lora-r16 --out_dir outputs/whisper-merged
+
+# Option B: Use adapter directly
+./.venv/Scripts/python scripts/asr_infer.py data/audio/king.mp3 \
+  --model_path NbAiLab/nb-whisper-large --adapter_path outputs/whisper-lora-r16 --device cpu --num_beams 5
+```
+
+</details>
+
+**Outputs**: Model saved to `outputs/whisper-finetuned/`, logs in `runs/`
+
+### Step 5: Evaluation & Export
+
+<details>
+<summary><strong>WER Evaluation</strong></summary>
+
+```powershell
+# Evaluate WER on validation set
+./.venv/Scripts/python scripts/eval_wer.py data/val.csv --model_path outputs/whisper-finetuned --device cpu --num_beams 5
+ 
+# Evaluate WER with a LoRA adapter
+./.venv/Scripts/python scripts/eval_wer.py data/val.csv --model_path NbAiLab/nb-whisper-large --adapter_path outputs/whisper-lora-r16 --device cpu --num_beams 5
+```
+</details>
+
+<details>
+<summary><strong>Export and Benchmark</strong></summary>
+
+```powershell
+# Export ONNX
+./.venv/Scripts/python scripts/export_onnx.py --model_path outputs/whisper-finetuned --out_dir exports/onnx
+
+# Benchmark latency/RTF
+./.venv/Scripts/python scripts/benchmark.py data/audio/king.mp3 --model_path outputs/whisper-finetuned --device cpu --runs 3
+```
+
+**Notes**:
+- Latency is wall-clock per run; RTF = latency / audio_duration (lower is better; <1 means faster than real-time)
+- ONNX export saves processor assets in the same folder; use your preferred runtime (e.g., onnxruntime, OpenVINO) to load
+</details>
+
+### Step 6: Monitoring & Comparison
+
+<details>
+<summary><strong>TensorBoard Monitoring</strong></summary>
+
+```powershell
+# Launch TensorBoard (tensorboard included in requirements.txt)
 ./.venv/Scripts/tensorboard --logdir runs --host 127.0.0.1 --port 6006
 ```
 Open: [http://127.0.0.1:6006](http://127.0.0.1:6006)
 </details>
 
 <details>
-<summary><strong>Model Evaluation</strong></summary>
+<summary><strong>Model Comparison</strong></summary>
 
 ```powershell
 # Compare base vs fine-tuned models
 ./.venv/Scripts/python scripts/asr_infer.py data/audio/king.mp3 --model_path NbAiLab/nb-whisper-large --device cpu --num_beams 5
 ./.venv/Scripts/python scripts/asr_infer_finetuned.py data/audio/king.mp3 --model_path outputs/whisper-finetuned --device cpu --num_beams 5
-
-# Evaluate WER on validation set
-./.venv/Scripts/python scripts/eval_wer.py data/val.csv --model_path outputs/whisper-finetuned --device cpu --num_beams 5
 ```
 </details>
 
-## Detailed Usage
+## Advanced Features
+
+### Experiment Tracking (MLflow)
+
+```powershell
+./.venv/Scripts/python train/finetune.py \
+  --model_id NbAiLab/nb-whisper-large \
+  --dataset data/train.csv \
+  --dataset_eval data/val.csv \
+  --num_train_epochs 1 \
+  --per_device_train_batch_size 4 \
+  --gradient_accumulation_steps 4 \
+  --fp16 \
+  --mlflow_tracking_uri http://127.0.0.1:5000 \
+  --mlflow_experiment nb-whisper
+```
+
+**What gets logged**: All CLI params, evaluation metrics (if eval set provided), and `training_metadata.json` as artifact.
+
+### Interactive Demo
+
+```powershell
+# Launch Gradio interface
+./.venv/Scripts/python apps/demo_gradio.py
+```
+Open: [http://127.0.0.1:7860](http://127.0.0.1:7860)
+
+### Docker Deployment
+
+<details>
+<summary><strong>CPU Image</strong></summary>
+
+```powershell
+docker build -f docker/Dockerfile.cpu -t nbw-demo:cpu .
+docker run -p 7860:7860 nbw-demo:cpu
+```
+</details>
+
+<details>
+<summary><strong>GPU Image</strong> (requires NVIDIA Container Toolkit)</summary>
+
+```powershell
+docker build -f docker/Dockerfile.gpu -t nbw-demo:gpu .
+docker run --gpus all -p 7860:7860 nbw-demo:gpu
+```
+</details>
+
+## Project Structure
+
+```
+nb-whisper-finetune/
+├── scripts/                      # Core functionality
+│   ├── asr_infer.py              # Base model inference
+│   ├── asr_infer_finetuned.py    # Fine-tuned model inference  
+│   ├── prepare_dataset.py        # Dataset preparation & auto-transcription (+VAD)
+│   ├── inspect_model.py          # Model structure analysis
+│   ├── trace_generate.py         # Token generation tracing
+│   ├── eval_wer.py               # WER evaluation
+│   ├── merge_lora.py             # Merge LoRA adapter into base
+│   ├── export_onnx.py            # Export model to ONNX
+│   └── benchmark.py              # Latency/RTF benchmark
+├── train/
+│   └── finetune.py               # Full-model or LoRA fine-tuning pipeline (+MLflow opt.)
+├── apps/
+│   └── demo_gradio.py            # Interactive local demo
+├── tests/                        # Minimal tests (no model download)
+│   ├── test_vad.py
+│   └── test_utils.py
+├── data/                         # Your datasets
+├── outputs/                      # Fine-tuned models (gitignored)  
+├── runs/                         # TensorBoard logs (gitignored)
+├── docker/
+│   ├── Dockerfile.cpu            # CPU image (demo)
+│   └── Dockerfile.gpu            # GPU image (demo)
+├── .dockerignore                 # Docker ignore rules
+├── requirements.txt              # Python dependencies
+└── README.md                     # This guide
+```
+
+## Advanced Usage
 
 ### Model Analysis Tools
 
@@ -186,40 +326,20 @@ Open: [http://127.0.0.1:6006](http://127.0.0.1:6006)
 # Trace token generation process
 ./.venv/Scripts/python scripts/trace_generate.py data/audio/king.mp3 \
   --model_path NbAiLab/nb-whisper-large \
-  --max_new_tokens 64 \
+  --max_new_tokens 128 \
   --num_beams 5 \
   --out analysis_trace.txt
 ```
 </details>
 
-### Current Limitations
+## Current Limitations
 
 | Limitation | Description | Workaround |
 |------------|-------------|------------|
-| **Training Method** | Full-model fine-tuning only (no LoRA/PEFT) | Use `--max_steps` for quick experiments |
-| **Audio Processing** | No speaker diarization or VAD | Preprocess audio externally if needed |
-| **Performance** | Auto-transcription slow on CPU | Use GPU or prepare transcripts manually |
-| **Data Augmentation** | Basic augmentations only | Extend `finetune.py` for advanced techniques |
-
-## Project Structure
-
-```
-nb-whisper-finetune/
-├── scripts/                      # Core functionality
-│   ├── asr_infer.py              # Base model inference
-│   ├── asr_infer_finetuned.py    # Fine-tuned model inference  
-│   ├── prepare_dataset.py        # Dataset preparation & auto-transcription
-│   ├── inspect_model.py          # Model structure analysis
-│   ├── trace_generate.py         # Token generation tracing
-│   └── eval_wer.py               # WER evaluation
-├── train/
-│   └── finetune.py               # Full-model fine-tuning pipeline
-├── data/                         # Your datasets
-├── outputs/                      # Fine-tuned models (gitignored)  
-├── runs/                         # TensorBoard logs (gitignored)
-├── requirements.txt              # Python dependencies
-└── README.md                     # This guide
-```
+| **Speaker Diarization** | Not included | Preprocess audio externally |
+| **Advanced VAD** | Simple energy-based VAD only | Replace with WebRTC VAD or pyannote |
+| **CPU Performance** | Base Transformers pipeline on CPU is slower | Use ONNX export or GPU |
+| **Augmentations** | Basic speed/noise only | Extend `finetune.py` as needed |
 
 ## Troubleshooting
 
@@ -251,8 +371,8 @@ nb-whisper-finetune/
 | Issue | Solution |
 |-------|----------|
 | CPU training too slow | Use `--max_steps 5` for testing, GPU for production |
-| TorchCodec warnings | `pip uninstall -y torchcodec` (we use torchaudio) |
 | GPU out of memory | Reduce batch size or enable `--fp16` |
+| Audio loading errors | Ensure audio files are valid; check `torchaudio` installation |
 
 </details>
 

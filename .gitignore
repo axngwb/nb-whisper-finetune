@@ -1,6 +1,7 @@
 # Python/venv
 .venv/
 __pycache__/
+.pytest_cache/
 
 # VSCode/Cursor
 .vscode/
